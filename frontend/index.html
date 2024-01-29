@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        form,
+        #books {
+            margin: 20px;
+        }
+
+        #books {
+            display: none;
+        }
+
+        .book-item {
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+        }
+
+        .book-item img {
+            max-width: 100px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="login">
+        <h2>Login</h2>
+        <form id="loginForm">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required><br>
+
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required><br>
+
+            <button type="button" onclick="login()">Login</button>
+        </form>
+
+        <h2>Register</h2>
+        <form id="registerForm">
+            <label for="regName">Name:</label>
+            <input type="text" id="regName" name="regName" required><br>
+
+            <label for="regCity">City:</label>
+            <input type="text" id="regCity" name="regCity" required><br>
+
+            <label for="regAge">Age:</label>
+            <input type="text" id="regAge" name="regAge"><br>
+
+            <label for="regUsername">Username:</label>
+            <input type="text" id="regUsername" name="regUsername" required><br>
+
+            <label for="regPassword">Password:</label>
+            <input type="password" id="regPassword" name="regPassword" required><br>
+
+            <button type="button" onclick="register()">Register</button>
+        </form>
+    </div>
+
+    <div id="books">
+        <h2>Books</h2>
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Author</th>
+                    <th>Year Published</th>
+                    <th>Type</th>
+                    <th>Customer ID</th>
+                    <th>Image</th>
+                </tr>
+            </thead>
+            <tbody id="bookList"></tbody>
+        </table>
+        <button type="button" onclick="logout()">Logout</button>
+
+        <!-- Add Book Form -->
+        <h3>Add Book</h3>
+        <form id="addBookForm" enctype="multipart/form-data">
+            <label for="bookName">Book Name:</label>
+            <input type="text" id="bookName" name="bookName" required><br>
+
+            <label for="bookAuthor">Author:</label>
+            <input type="text" id="bookAuthor" name="bookAuthor" required><br>
+
+            <label for="yearPublished">Year Published:</label>
+            <input type="text" id="yearPublished" name="yearPublished" required><br>
+
+            <label for="bookType">Book Type:</label>
+            <select id="bookType" name="bookType" required>
+                <option value="1">Type 1</option>
+                <option value="2">Type 2</option>
+                <option value="3">Type 3</option>
+            </select><br>
+
+            <label for="bookImage">Book Image:</label>
+            <input type="file" id="bookImage" name="image" accept="image/*"><br>
+            <img id="previewImage" src="" alt="Book Image" style="max-width: 300px; display: none;"><br>
+
+            <button type="button" onclick="addBook()">Add Book</button>
+        </form>
+
+        <!-- Update Book Form -->
+        <h3>Update Book</h3>
+        <form id="updateBookForm">
+
+            <label for="updateBookName">New Book Name:</label>
+            <input type="text" id="updateBookName" name="updateBookName" required><br>
+
+            <label for="updateBookAuthor">New Author:</label>
+            <input type="text" id="updateBookAuthor" name="updateBookAuthor" required><br>
+
+            <label for="updateYearPublished">New Year Published:</label>
+            <input type="text" id="updateYearPublished" name="updateYearPublished" required><br>
+
+            <label for="updateBookType">New Book Type:</label>
+            <select id="updateBookType" name="updateBookType" required>
+                <option value="1">Type 1</option>
+                <option value="2">Type 2</option>
+                <option value="3">Type 3</option>
+            </select><br>
+
+            <button type="button" onclick="updateBook()">Update Book</button>
+        </form>
+
+        <!-- Delete Book Form -->
+        <h3>Delete Book</h3>
+        <form id="deleteBookForm">
+            <label for="deleteBookId">Book ID:</label>
+            <input type="text" id="deleteBookId" name="deleteBookId" required><br>
+
+            <button type="button" onclick="deleteBook()">Delete Book</button>
+        </form>
+    </div>
+
+    <script>
+        const apiUrl = 'http://localhost:5000';
+
+        function showBooksPage() {
+            document.getElementById('login').style.display = 'none';
+            document.getElementById('books').style.display = 'block';
+            loadBooks();
+        }
+
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            fetch(`${apiUrl}/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.token) {
+                        localStorage.setItem('token', data.token);
+                        showBooksPage();
+                    } else {
+                        alert('Invalid credentials');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function register() {
+            const regName = document.getElementById('regName').value;
+            const regCity = document.getElementById('regCity').value;
+            const regAge = document.getElementById('regAge').value;
+            const regUsername = document.getElementById('regUsername').value;
+            const regPassword = document.getElementById('regPassword').value;
+
+            fetch(`${apiUrl}/register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name: regName, city: regCity, age: regAge, username: regUsername, password: regPassword })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.token) {
+                        localStorage.setItem('token', data.token);
+                        document.getElementById('login').style.display = 'none';
+                        document.getElementById('books').style.display = 'block';
+                        loadBooks();
+                    } else {
+                        alert('Registration failed');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        document.getElementById('bookImage').addEventListener('change', function () {
+            const fileInput = this;
+            const previewImage = document.getElementById('previewImage');
+
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+
+                reader.onload = function (e) {
+                    previewImage.src = e.target.result;
+                    previewImage.style.display = 'block';
+                };
+
+                reader.readAsDataURL(fileInput.files[0]);
+            }
+        });
+
+        function loadBooks() {
+            const token = localStorage.getItem('token');
+
+            if (token) {
+                fetch(`${apiUrl}/books`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Unauthorized'); // Add appropriate error handling
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        const bookListContainer = document.getElementById('bookList');
+                        bookListContainer.innerHTML = '';
+
+                        data.books.forEach(book => {
+                            const row = document.createElement('tr');
+
+                            const idCell = document.createElement('td');
+                            idCell.textContent = book.id;
+                            row.appendChild(idCell);
+
+                            const nameCell = document.createElement('td');
+                            nameCell.textContent = book.name;
+                            row.appendChild(nameCell);
+
+                            const authorCell = document.createElement('td');
+                            authorCell.textContent = book.author;
+                            row.appendChild(authorCell);
+
+                            const yearCell = document.createElement('td');
+                            yearCell.textContent = book.year_published;
+                            row.appendChild(yearCell);
+
+                            const typeCell = document.createElement('td');
+                            typeCell.textContent = book.book_type;
+                            row.appendChild(typeCell);
+
+                            const customerIdCell = document.createElement('td');
+                            customerIdCell.textContent = book.customer_id;
+                            row.appendChild(customerIdCell);
+
+                            const imageCell = document.createElement('td');
+                            const img = document.createElement('img');
+                            img.src = `${apiUrl}/${book.image}`;
+                            img.alt = 'Book Image';
+                            img.style.maxWidth = '100px';
+                            imageCell.appendChild(img);
+                            row.appendChild(imageCell);
+
+                            bookListContainer.appendChild(row);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+            }
+        }
+
+        function addBook() {
+            const token = localStorage.getItem('token');
+            const bookName = document.getElementById('bookName').value;
+            const bookAuthor = document.getElementById('bookAuthor').value;
+            const yearPublished = document.getElementById('yearPublished').value;
+            const bookType = document.getElementById('bookType').value;
+            const bookImage = document.getElementById('bookImage').files[0];
+
+            const formData = new FormData();
+            formData.append('name', bookName);
+            formData.append('author', bookAuthor);
+            formData.append('year_published', yearPublished);
+            formData.append('book_type', bookType);
+            formData.append('image', bookImage);
+
+            fetch(`${apiUrl}/books`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message === 'Book added successfully') {
+                        loadBooks();
+                    } else {
+                        alert('Failed to add book');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function updateBook() {
+            const token = localStorage.getItem('token');
+            const updateBookId = document.getElementById('updateBookId').value;
+            const updateBookName = document.getElementById('updateBookName').value;
+            const updateBookAuthor = document.getElementById('updateBookAuthor').value;
+            const updateYearPublished = document.getElementById('updateYearPublished').value;
+            const updateBookType = document.getElementById('updateBookType').value;
+
+            fetch(`${apiUrl}/books/${updateBookId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    name: updateBookName,
+                    author: updateBookAuthor,
+                    year_published: updateYearPublished,
+                    book_type: updateBookType,
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message === 'Book updated successfully') {
+                        loadBooks();
+                    } else {
+                        alert('Failed to update book');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function deleteBook() {
+            const token = localStorage.getItem('token');
+            const deleteBookId = document.getElementById('deleteBookId').value;
+
+            fetch(`${apiUrl}/books/${deleteBookId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message === 'Book deleted successfully') {
+                        loadBooks();
+                    } else {
+                        alert('Failed to delete book');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            document.getElementById('login').style.display = 'block';
+            document.getElementById('books').style.display = 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const token = localStorage.getItem('token');
+            if (token) {
+                loadBooks();
+            }
+        });
+    </script>
+
+</body>
+
+</html>
